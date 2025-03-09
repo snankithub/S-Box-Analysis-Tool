@@ -70,7 +70,7 @@ def swap_mutation(sbox):
     return sbox
 
 # Generate initial population with unique permutations
-def generate_initial_population(size=500):
+def generate_initial_population(size=10000):
     """Generate an initial population of unique S-boxes."""
     population = set()
     while len(population) < size:
@@ -78,17 +78,21 @@ def generate_initial_population(size=500):
         population.add(perm)
     return [np.array(sbox) for sbox in population]
 
+# HawkBoost Algorithm (Placeholder)
+def hawkboost_algorithm(best_sbox, best_min_nl):
+    """HawkBoost Algorithm to enhance the solution."""
+    # Implement the HawkBoost Algorithm based on the resources provided
+    # This is a placeholder function and should be replaced with the actual implementation
+    return best_sbox, best_min_nl
+
 # Genetic Algorithm for S-Box Optimization
-def genetic_algorithm():
+def genetic_algorithm(max_generations=25):
     """Optimize an S-box for high nonlinearity using Genetic Algorithm."""
     population = generate_initial_population()
     best_min_nl = 0
     best_sbox = None
-    generations = 50
-    stagnation_count = 0
-    prev_best = 0
 
-    for generation in range(generations):
+    for generation in range(max_generations):
         nonlinearities = [sboxNonlinearity(sbox) for sbox in population]
         min_nls = [nl[0] for nl in nonlinearities]
 
@@ -99,16 +103,8 @@ def genetic_algorithm():
         if current_best_min_nl > best_min_nl:
             best_min_nl = current_best_min_nl
             best_sbox = population[best_idx]
-            stagnation_count = 0  # Reset stagnation counter
-        else:
-            stagnation_count += 1
 
         print(f"Generation {generation + 1}: Best min non-linearity = {best_min_nl}")
-
-        # Early stopping if stagnation for 5 consecutive generations
-        if stagnation_count >= 5:
-            print("No improvement, stopping early.")
-            break
 
         # Elitist selection
         elite_threshold = 102
@@ -121,7 +117,7 @@ def genetic_algorithm():
         new_population = [best_sbox]
         seen = {tuple(best_sbox)}
 
-        while len(new_population) < 500:
+        while len(new_population) < 1000:
             parent1_idx, parent2_idx = np.random.choice(parents_indices, 2, replace=True)
             parent1, parent2 = population[parent1_idx], population[parent2_idx]
             offspring1, offspring2 = pmx(parent1, parent2)
@@ -130,11 +126,17 @@ def genetic_algorithm():
             offspring1, offspring2 = swap_mutation(offspring1), swap_mutation(offspring2)
 
             for offspring in [offspring1, offspring2]:
-                if tuple(offspring) not in seen and len(new_population) < 500:
+                if tuple(offspring) not in seen and len(new_population) < 1000:
                     seen.add(tuple(offspring))
                     new_population.append(offspring)
 
         population = new_population
+
+        # Integrate HawkBoost Algorithm
+        if best_min_nl >= 104:
+            best_sbox, best_min_nl = hawkboost_algorithm(best_sbox, best_min_nl)
+            if best_min_nl >= 110:
+                break
 
     return best_sbox, best_min_nl
 
